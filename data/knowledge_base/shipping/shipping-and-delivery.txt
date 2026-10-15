@@ -1,0 +1,21 @@
+Harbor & Co. Shipping and Delivery Policy (Sample / Fictional)
+
+Harbor & Co. ships headphones, speakers, and cables across India in this sample dataset.
+
+Delivery options after an order leaves the warehouse:
+- Standard delivery: arrives in 5 business days after the order leaves the warehouse
+- Express delivery: arrives in 2 business days after the order leaves the warehouse
+
+Business days exclude Saturdays, Sundays, and public holidays.
+
+Tracking and updates:
+- Customers receive a tracking link by email when the order ships.
+- Customers should contact support with their order id for shipping updates.
+
+Missed delivery promises:
+- If an order misses its promised delivery date, the customer may request a refund under the refund policy.
+- Late delivery refund eligibility applies to the item price rules described in the refund documents.
+
+Address changes:
+- Address changes are only possible while the order status is processing.
+- Once shipped or in transit, support cannot redirect the carrier in this sample policy.

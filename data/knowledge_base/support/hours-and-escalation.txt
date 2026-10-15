@@ -1,0 +1,19 @@
+Harbor & Co. Support Hours and Escalation (Sample / Fictional)
+
+Sample support hours:
+- Chat and email support: Monday through Friday, 9:00 to 18:00 India Standard Time (IST)
+- Closed Saturdays, Sundays, and listed public holidays in this sample policy
+- Messages received outside hours are answered on the next business day in this sample process
+
+When to escalate to a human support representative:
+- Duplicate payment disputes that need manual finance review
+- Identity-sensitive account email or ownership changes
+- Warranty claims that need inspection scheduling
+- Situations where documents do not contain enough information to resolve the request
+- Safety issues or damaged products where the customer reports injury risk
+
+How escalation works in this sample:
+- Collect the customer's order id when available, a short description of the issue, and the troubleshooting or policy steps already tried.
+- Tell the customer that a human agent will follow up during support hours.
+- Do not invent a phone number, WhatsApp number, or physical address. This sample dataset does not publish a public phone line.
+- For this local demo, "escalation" means explaining the next step and that human review is required; no real ticket system is connected.

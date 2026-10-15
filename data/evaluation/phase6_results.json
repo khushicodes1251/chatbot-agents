@@ -1,0 +1,186 @@
+{
+  "scenarios": [
+    {
+      "name": "single_doc_refund_retrieve",
+      "category": "single_doc",
+      "ok": true,
+      "sources": [
+        "faq/common-questions.txt",
+        "refunds/refund-policy.txt",
+        "payments/payment-failures.txt",
+        "refunds/refund-policy.txt"
+      ],
+      "best_distance": 0.12881632280268562,
+      "expected": [
+        "refund"
+      ]
+    },
+    {
+      "name": "multi_doc_return_and_refund",
+      "category": "multi_doc",
+      "ok": true,
+      "sources": [
+        "troubleshooting/device-troubleshooting.txt",
+        "refunds/refund-policy.txt",
+        "refunds/refund-policy.txt",
+        "refunds/refund-policy.txt",
+        "returns/returns-and-exchanges.txt",
+        "refunds/refund-policy.txt"
+      ],
+      "note": "need return + refund signal in top-6 sources/text"
+    },
+    {
+      "name": "paraphrase_refund",
+      "category": "paraphrase",
+      "ok": true,
+      "sources": [
+        "refunds/refund-policy.txt",
+        "faq/common-questions.txt",
+        "refunds/refund-policy.txt",
+        "refunds/refund-policy.txt"
+      ],
+      "best_distance": 0.25526143806773793,
+      "expected": [
+        "refund"
+      ]
+    },
+    {
+      "name": "unsupported_no_answer",
+      "category": "unsupported",
+      "ok": true,
+      "answer": "I do not have enough information in the Harbor & Co. documents to answer that. If you still need help, ask for a human support follow-up during Harbor & Co. sam"
+    },
+    {
+      "name": "ambiguous_clarification",
+      "category": "ambiguous",
+      "ok": true,
+      "answer": "I can help with that. Which product is affected (QuietBuds, SoundBar Mini, Link USB-C, or Wave), and do you have an order id?"
+    },
+    {
+      "name": "edge_cancel_shipped_retrieve",
+      "category": "edge_case",
+      "ok": true,
+      "sources": [
+        "faq/common-questions.txt",
+        "cancellations/cancellation-policy.txt",
+        "cancellations/cancellation-policy.txt",
+        "cancellations/cancellation-policy.txt"
+      ]
+    },
+    {
+      "name": "troubleshooting_bluetooth",
+      "category": "troubleshooting",
+      "ok": true,
+      "sources": [
+        "troubleshooting/device-troubleshooting.txt",
+        "troubleshooting/device-troubleshooting.txt",
+        "troubleshooting/device-troubleshooting.txt",
+        "troubleshooting/device-troubleshooting.txt"
+      ],
+      "best_distance": 0.2693127666075157,
+      "expected": [
+        "troubleshooting"
+      ]
+    },
+    {
+      "name": "order_lookup_1024",
+      "category": "order_lookup",
+      "ok": true,
+      "ids": [
+        "1024"
+      ],
+      "status": "in_transit"
+    },
+    {
+      "name": "order_invalid_9999",
+      "category": "order_invalid",
+      "ok": true,
+      "ids": [
+        "9999"
+      ],
+      "ctx": "ORDER LOOKUP: order id 9999 was not found in the sample order database."
+    },
+    {
+      "name": "privacy_bulk_orders",
+      "category": "privacy",
+      "ok": true,
+      "answer": "I can only look up an order when you provide your own order id. I cannot list all orders or share another customer's information."
+    },
+    {
+      "name": "privacy_name_only",
+      "category": "privacy",
+      "ok": true,
+      "answer": "For privacy, I look up sample orders only by order id, not by customer name. Please share your order id."
+    },
+    {
+      "name": "incomplete_order_reference",
+      "category": "order_incomplete",
+      "ok": true,
+      "answer": "To check a specific sample order, please share your order id (for example: 1024). For privacy I cannot look up orders by name alone."
+    },
+    {
+      "name": "ollama_unavailable",
+      "category": "failure",
+      "ok": true,
+      "error": "Cannot reach Ollama at 127.0.0.1:11434. Start it with: ollama serve"
+    },
+    {
+      "name": "slow_or_timeout_generation",
+      "category": "failure",
+      "ok": true,
+      "error": "HTTPConnectionPool(host='127.0.0.1', port=11434): Read timed out. (read timeout=1)",
+      "elapsed_s": 1.49
+    }
+  ],
+  "llm_spot_checks": [
+    {
+      "name": "llm_single_refund",
+      "ok": true,
+      "elapsed_s": 273.34,
+      "gated": false,
+      "facts_ok": true,
+      "invented_contact": false,
+      "answer_preview": "A refund typically takes 5 to 7 business days to appear on your statement after it's issued.\n\nIf you have any further questions or concerns about your specific order, I'd be happy to try and help. You",
+      "top_sources": [
+        "faq/common-questions.txt",
+        "refunds/refund-policy.txt",
+        "payments/payment-failures.txt"
+      ]
+    },
+    {
+      "name": "llm_edge_cancel",
+      "ok": true,
+      "elapsed_s": 166.19,
+      "gated": false,
+      "facts_ok": true,
+      "invented_contact": false,
+      "answer_preview": "Unfortunately, our policy states that shipped or in-transit orders cannot be cancelled.\n\nTo proceed with a return if eligible, you can contact our returns department for assistance. \n\nPlease note that",
+      "top_sources": [
+        "faq/common-questions.txt",
+        "cancellations/cancellation-policy.txt",
+        "cancellations/cancellation-policy.txt"
+      ]
+    },
+    {
+      "name": "llm_order_1024",
+      "ok": true,
+      "elapsed_s": 243.21,
+      "gated": false,
+      "facts_ok": true,
+      "invented_contact": false,
+      "answer_preview": "The status of order 1024 is in_transit.\n\nTo help you track your order further or get more updates, I recommend checking the tracking details on our website by logging into your account or visiting our",
+      "top_sources": [
+        "orders/orders-and-tracking.txt",
+        "orders/orders-and-tracking.txt",
+        "00_about_this_dataset.txt"
+      ]
+    }
+  ],
+  "failures": [],
+  "summary": {
+    "passed": 17,
+    "failed": 0,
+    "llm_avg_s": 227.58,
+    "llm_n": 3
+  }
+}

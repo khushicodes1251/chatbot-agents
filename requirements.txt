@@ -1,0 +1,11 @@
+# Stage 1 — learning / notebooks (document loading & chunking)
+notebook>=7.0,<8
+ipykernel>=6.29,<7
+nbconvert>=7.16,<8
+
+# Stage 2 — local embeddings + similarity (Ollama HTTP API + numpy)
+numpy>=1.26,<3
+requests>=2.31,<3
+
+# Stage 3 — local vector store
+chromadb>=0.5,<1

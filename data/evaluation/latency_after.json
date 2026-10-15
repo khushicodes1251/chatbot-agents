@@ -1,0 +1,251 @@
+{
+  "label": "after",
+  "chat_model": "llama3.2:3b",
+  "settings": {
+    "num_predict": 120,
+    "temperature": 0.2,
+    "top_k": 4,
+    "max_distance": 0.35,
+    "stream_responses": true
+  },
+  "warm_runs": 2,
+  "rows": [
+    {
+      "case_id": "refund_timing",
+      "run_type": "cold",
+      "ttft_s": 179.134,
+      "gen_s": 229.795,
+      "prepare_s": 0.702,
+      "e2e_s": 230.497,
+      "quality": {
+        "ok": true,
+        "kind": "facts",
+        "detail": "1/1"
+      },
+      "answer_preview": "According to our refund policy, refunds typically take 5 to 7 business days to appear on your statement after the refund is issued.\n\nNext steps:\n1. Check your b",
+      "prompt_chars": 1550
+    },
+    {
+      "case_id": "refund_timing",
+      "run_type": "warm",
+      "prepare_s": 0.702,
+      "ttft_s_avg": 0.794,
+      "gen_s_avg": 52.459,
+      "ttft_s_steady": 0.77,
+      "gen_s_steady": 54.715,
+      "runs": [
+        {
+          "run": 1,
+          "ttft_s": 0.818,
+          "gen_s": 50.202,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "1/1"
+          },
+          "chars": 327
+        },
+        {
+          "run": 2,
+          "ttft_s": 0.77,
+          "gen_s": 54.715,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "1/1"
+          },
+          "chars": 343
+        }
+      ],
+      "quality": {
+        "ok": true,
+        "kind": "facts",
+        "detail": "1/1"
+      },
+      "answer_preview": "According to our refund policy, refunds typically take 5 to 7 business days to appear on your statement after the refund is issued.\n\nNext steps:\n\n1. Please allo",
+      "prompt_chars": 1550,
+      "hit_sources": [
+        "refunds/refund-policy.txt",
+        "faq/common-questions.txt",
+        "payments/payment-failures.txt",
+        "shipping/shipping-and-delivery.txt"
+      ]
+    },
+    {
+      "case_id": "cancel_shipped",
+      "run_type": "warm",
+      "prepare_s": 0.462,
+      "ttft_s_avg": 54.906,
+      "gen_s_avg": 82.736,
+      "ttft_s_steady": 0.777,
+      "gen_s_steady": 30.494,
+      "runs": [
+        {
+          "run": 1,
+          "ttft_s": 109.035,
+          "gen_s": 134.978,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "1/1"
+          },
+          "chars": 178
+        },
+        {
+          "run": 2,
+          "ttft_s": 0.777,
+          "gen_s": 30.494,
+          "quality": {
+            "ok": false,
+            "kind": "facts",
+            "detail": "0/1"
+          },
+          "chars": 221
+        }
+      ],
+      "quality": {
+        "ok": false,
+        "kind": "facts",
+        "detail": "0/1"
+      },
+      "answer_preview": "According to the documentation, a shipment is not eligible for cancellation.\n\nNext steps:\n\n1. Please wait for delivery of your order.\n2. Once you receive the pa",
+      "prompt_chars": 1694,
+      "hit_sources": [
+        "cancellations/cancellation-policy.txt",
+        "faq/common-questions.txt",
+        "orders/orders-and-tracking.txt",
+        "shipping/shipping-and-delivery.txt"
+      ]
+    },
+    {
+      "case_id": "multi_return_and_refund",
+      "run_type": "warm",
+      "prepare_s": 0.691,
+      "ttft_s_avg": 57.216,
+      "gen_s_avg": 78.254,
+      "ttft_s_steady": 0.993,
+      "gen_s_steady": 23.272,
+      "runs": [
+        {
+          "run": 1,
+          "ttft_s": 113.439,
+          "gen_s": 133.235,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "2/2"
+          },
+          "chars": 151
+        },
+        {
+          "run": 2,
+          "ttft_s": 0.993,
+          "gen_s": 23.272,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "2/2"
+          },
+          "chars": 166
+        }
+      ],
+      "quality": {
+        "ok": true,
+        "kind": "facts",
+        "detail": "2/2"
+      },
+      "answer_preview": "Yes, according to our policy, an item that arrives damaged is eligible for a refund.\n\nPlease contact us via [insert method of contact] to initiate the return pr",
+      "prompt_chars": 1693,
+      "hit_sources": [
+        "refunds/refund-policy.txt",
+        "returns/returns-and-exchanges.txt",
+        "troubleshooting/device-troubleshooting.txt",
+        "shipping/shipping-and-delivery.txt"
+      ]
+    },
+    {
+      "case_id": "support_hours",
+      "run_type": "warm",
+      "prepare_s": 0.318,
+      "ttft_s_avg": 48.343,
+      "gen_s_avg": 92.008,
+      "ttft_s_steady": 0.905,
+      "gen_s_steady": 46.537,
+      "runs": [
+        {
+          "run": 1,
+          "ttft_s": 95.781,
+          "gen_s": 137.48,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "3/3"
+          },
+          "chars": 294
+        },
+        {
+          "run": 2,
+          "ttft_s": 0.905,
+          "gen_s": 46.537,
+          "quality": {
+            "ok": true,
+            "kind": "facts",
+            "detail": "3/3"
+          },
+          "chars": 293
+        }
+      ],
+      "quality": {
+        "ok": true,
+        "kind": "facts",
+        "detail": "3/3"
+      },
+      "answer_preview": "Our support hours are:\n\n- Chat and email support: Monday through Friday, 9:00 to 18:00 India Standard Time (IST)\n- Closed Saturdays, Sundays, and listed public ",
+      "prompt_chars": 1543,
+      "hit_sources": [
+        "support/hours-and-escalation.txt",
+        "faq/common-questions.txt",
+        "shipping/shipping-and-delivery.txt",
+        "refunds/refund-policy.txt"
+      ]
+    },
+    {
+      "case_id": "out_of_scope_capitals",
+      "run_type": "fixed_no_llm",
+      "ttft_s": 0.0,
+      "gen_s": 0.0,
+      "prepare_s": 0.27,
+      "e2e_s": 0.27,
+      "quality": {
+        "ok": true,
+        "kind": "refuse",
+        "detail": "refusal/privacy"
+      },
+      "answer_preview": "I do not have enough information in the Harbor & Co. documents to answer that. If you still need help, ask for a human support follow-up during Harbor & Co. sam"
+    },
+    {
+      "case_id": "privacy_other_customer",
+      "run_type": "fixed_no_llm",
+      "ttft_s": 0.0,
+      "gen_s": 0.0,
+      "prepare_s": 0.0,
+      "e2e_s": 0.0,
+      "quality": {
+        "ok": true,
+        "kind": "refuse",
+        "detail": "refusal/privacy"
+      },
+      "answer_preview": "I can only look up an order when you provide your own order id. I cannot list all orders or share another customer's information."
+    }
+  ],
+  "summary": {
+    "warm_avg_ttft_s": 40.315,
+    "warm_avg_gen_s": 76.364,
+    "steady_avg_ttft_s": 0.861,
+    "steady_avg_gen_s": 38.755,
+    "correctness_rate": 0.833,
+    "correctness": "5/6",
+    "cold_ttft_s": 179.134,
+    "cold_gen_s": 229.795
+  }
+}

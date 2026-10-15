@@ -1,0 +1,17 @@
+Harbor & Co. Cancellation Policy (Sample / Fictional)
+
+When cancellation is allowed:
+- An order can be cancelled while its status is processing.
+- A shipped or in-transit order cannot be cancelled.
+
+How to cancel:
+- To cancel a processing order, the customer must provide the order id.
+- Cancelled orders are refunded to the original payment method.
+
+If the order already shipped or is in transit:
+- Support cannot stop a carrier once the package is in transit.
+- The customer may wait for delivery and then request a return if eligible under the return policy.
+
+Edge case — processing vs shipped:
+- Status processing: cancellation allowed with order id.
+- Status shipped or in_transit: cancellation denied; offer return guidance after delivery if eligible.

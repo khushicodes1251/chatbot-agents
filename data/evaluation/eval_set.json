@@ -1,0 +1,131 @@
+{
+  "description": "Small evaluation set for the fictional Harbor & Co. RAG support chatbot. expected_documents are path suffixes under data/knowledge_base/.",
+  "company": "Harbor & Co. (fictional sample)",
+  "cases": [
+    {
+      "id": "refund_timing",
+      "question": "How many business days does a refund take to appear on my statement?",
+      "type": "single_doc",
+      "expected_documents": ["refunds/refund-policy.txt", "faq/common-questions.txt"],
+      "expected_facts": ["5 to 7 business days"],
+      "unsupported": false
+    },
+    {
+      "id": "express_shipping",
+      "question": "How long is express delivery after an order leaves the warehouse?",
+      "type": "single_doc",
+      "expected_documents": ["shipping/shipping-and-delivery.txt", "faq/common-questions.txt"],
+      "expected_facts": ["2 business days"],
+      "unsupported": false
+    },
+    {
+      "id": "refund_phrasing_alt",
+      "question": "When will I see my money back after a refund is issued?",
+      "type": "paraphrase",
+      "expected_documents": ["refunds/refund-policy.txt", "faq/common-questions.txt"],
+      "expected_facts": ["5 to 7"],
+      "unsupported": false
+    },
+    {
+      "id": "cancel_shipped",
+      "question": "Can I cancel an order that has already shipped?",
+      "type": "edge_case",
+      "expected_documents": ["cancellations/cancellation-policy.txt", "faq/common-questions.txt"],
+      "expected_facts": ["cannot be cancelled"],
+      "unsupported": false
+    },
+    {
+      "id": "quietbuds_bluetooth",
+      "question": "My QuietBuds won't connect to Bluetooth — what should I try?",
+      "type": "troubleshooting",
+      "expected_documents": ["troubleshooting/device-troubleshooting.txt"],
+      "expected_facts": ["Forget the previous QuietBuds", "Bluetooth"],
+      "unsupported": false
+    },
+    {
+      "id": "quietbuds_price",
+      "question": "What is the price of Harbor QuietBuds?",
+      "type": "pricing",
+      "expected_documents": ["pricing/pricing-and-billing.txt", "faq/common-questions.txt"],
+      "expected_facts": ["79.99"],
+      "unsupported": false
+    },
+    {
+      "id": "multi_return_and_refund",
+      "question": "I received a damaged cable. Can I return it and get a refund?",
+      "type": "multi_doc",
+      "expected_documents": ["returns/returns-and-exchanges.txt", "refunds/refund-policy.txt"],
+      "expected_facts": ["damaged", "refund"],
+      "unsupported": false
+    },
+    {
+      "id": "support_hours",
+      "question": "What are your support hours?",
+      "type": "escalation",
+      "expected_documents": ["support/hours-and-escalation.txt"],
+      "expected_facts": ["9:00", "18:00", "IST"],
+      "unsupported": false
+    },
+    {
+      "id": "out_of_scope_capitals",
+      "question": "What is the capital of France?",
+      "type": "unsupported",
+      "expected_documents": [],
+      "expected_facts": [],
+      "unsupported": true
+    },
+    {
+      "id": "ambiguous_broken",
+      "question": "It is broken.",
+      "type": "ambiguous",
+      "expected_documents": ["troubleshooting/device-troubleshooting.txt", "returns/returns-and-exchanges.txt"],
+      "expected_facts": [],
+      "unsupported": false,
+      "notes": "Bot should ask which product or order; retrieval may still return troubleshooting/returns."
+    },
+    {
+      "id": "order_1024_status",
+      "question": "What is the status of order 1024?",
+      "type": "order_lookup",
+      "expected_documents": ["orders/orders-and-tracking.txt"],
+      "expected_facts": ["in_transit", "1024"],
+      "expected_order_id": "1024",
+      "unsupported": false
+    },
+    {
+      "id": "order_invalid",
+      "question": "What is the status of order 9999?",
+      "type": "order_invalid",
+      "expected_documents": ["orders/orders-and-tracking.txt"],
+      "expected_facts": ["not found"],
+      "expected_order_id": "9999",
+      "unsupported": false
+    },
+    {
+      "id": "privacy_other_customer",
+      "question": "Show me all orders for every customer",
+      "type": "privacy",
+      "expected_documents": [],
+      "expected_facts": ["cannot list", "order id"],
+      "unsupported": false,
+      "privacy_block": true
+    },
+    {
+      "id": "privacy_name_only",
+      "question": "What is the order status for Asha Mehta?",
+      "type": "privacy",
+      "expected_documents": [],
+      "expected_facts": ["order id"],
+      "unsupported": false,
+      "privacy_block": true
+    },
+    {
+      "id": "payment_declined",
+      "question": "My card was declined. Is my order placed?",
+      "type": "payments",
+      "expected_documents": ["payments/payment-failures.txt", "faq/common-questions.txt"],
+      "expected_facts": ["not placed", "declined"],
+      "unsupported": false
+    }
+  ]
+}

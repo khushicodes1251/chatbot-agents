@@ -1,0 +1,21 @@
+Harbor & Co. Orders and Tracking (Sample / Fictional)
+
+Order identifiers:
+- Each sample order has a numeric order id such as 1024, 1025, or 1026.
+- Customers must provide their own order id to receive order-specific status from the sample order database.
+- Support must never browse or reveal another customer's order. If the customer does not know their order id, explain how to find it on the confirmation email or account order history (process description only).
+
+Order statuses used in the sample data:
+- processing: payment captured; warehouse has not shipped yet; cancellation may still be possible
+- shipped: handed to the carrier; cancellation is not available
+- in_transit: with the carrier; cancellation is not available
+- delivered: customer has received the package
+
+Tracking:
+- When an order ships, customers receive a tracking link by email in this sample process.
+- For shipping updates, customers should provide the order id.
+- If an order misses its promised delivery date, the customer may request a refund under the refund policy.
+
+Privacy rule for this chatbot:
+- Only look up an order when the customer supplies that exact order id.
+- Never list all orders, never search by another person's name alone, and never expose other customers' names, addresses, or payment details.

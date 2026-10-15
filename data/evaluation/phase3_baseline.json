@@ -1,0 +1,27 @@
+{
+  "phase": "baseline_pre_p3",
+  "avg_total_s": 172.91,
+  "rows": [
+    {
+      "q": "How many business days does a refund take to appea",
+      "ttft_s": 231.21,
+      "total_s": 231.21,
+      "gated": false,
+      "chars": 140
+    },
+    {
+      "q": "How long is express delivery after an order leaves",
+      "ttft_s": 153.0,
+      "total_s": 153.0,
+      "gated": false,
+      "chars": 322
+    },
+    {
+      "q": "What is the price of Harbor QuietBuds?",
+      "ttft_s": 134.51,
+      "total_s": 134.51,
+      "gated": false,
+      "chars": 262
+    }
+  ]
+}

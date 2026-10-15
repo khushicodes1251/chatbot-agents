@@ -1,0 +1,21 @@
+Harbor & Co. Refund Policy (Sample / Fictional)
+
+When refunds are issued:
+- An approved return is refunded to the original payment method.
+- Refunds are issued after the returned item is received and inspected.
+
+Automatic eligibility examples:
+- An item that arrives damaged is eligible for a refund.
+- An order that misses its promised delivery date is eligible for a refund.
+
+Refund amounts:
+- Refund amounts match the item price paid on the order.
+- Shipping fees for express upgrades are not refunded unless Harbor & Co. caused the delay.
+
+Timing:
+- Customers should allow 5 to 7 business days for the refund to appear on their statement after the refund is issued.
+
+Edge cases:
+- A cancelled processing order is refunded to the original payment method (see cancellation policy).
+- Duplicate-charge disputes are not auto-refunded in chat; escalate for manual review (see payment-failures document).
+- Warranty repairs or replacements follow the warranty document and are not the same as a return refund.

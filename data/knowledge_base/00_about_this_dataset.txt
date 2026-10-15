@@ -1,0 +1,11 @@
+Harbor & Co. Sample Knowledge Base (FICTIONAL)
+
+IMPORTANT: Harbor & Co. is a fictional company created for learning and demonstrating a local RAG customer-support chatbot.
+Nothing in this dataset is a real company policy, real product offering, or real contact channel.
+
+How to use these documents:
+- Treat every file under data/knowledge_base/ as sample support content for Harbor & Co.
+- Rebuild the vector index after editing any file: python build_index.py
+- Original short policy copies also exist under support_agent/policies/ for historical reference; the chatbot indexes data/knowledge_base/ only.
+
+Sample order records used for safe order lookup live in support_agent/orders.json (also fictional).
