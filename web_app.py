@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Flask UI for chatting with PDFs the user uploads.
+"""Flask app for the local PDF chatbot.
 
-The Harbor support CLI is unchanged and is not used by this page.
+Serves the built React page and indexes only the PDFs the user uploads.
 """
 
 from __future__ import annotations

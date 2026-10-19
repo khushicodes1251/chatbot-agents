@@ -155,15 +155,3 @@ def chat_stream(
                 yield piece
             if data.get("done"):
                 break
-
-
-def unload_model(model: str) -> None:
-    """Ask Ollama to unload a model (keep_alive=0) for cold-start measurements."""
-    try:
-        _SESSION.post(
-            f"{config.OLLAMA_URL}/api/generate",
-            json={"model": model, "prompt": "", "keep_alive": 0},
-            timeout=60,
-        )
-    except requests.RequestException:
-        pass

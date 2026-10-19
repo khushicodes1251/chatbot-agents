@@ -111,7 +111,17 @@ def main() -> int:
     )
 
     web_source = (ROOT / "web_app.py").read_text(encoding="utf-8")
+    upload_source = (ROOT / "rag_chatbot" / "uploads.py").read_text(encoding="utf-8")
     check("web_does_not_call_harbor", "iter_answer_tokens" not in web_source and "pipeline" not in web_source)
+    check(
+        "harbor_app_removed",
+        not (ROOT / "chat_cli.py").exists()
+        and not (ROOT / "build_index.py").exists()
+        and not (ROOT / "rag_chatbot" / "pipeline.py").exists()
+        and not (ROOT / "data" / "knowledge_base").exists()
+        and "knowledge_base" not in upload_source
+        and "harbor_knowledge" not in upload_source,
+    )
 
     other = index_upload("other.pdf", text_pdf("The warehouse closes at 18:00."))
     check("second_pdf", other["name"] == "other.pdf" and not other["duplicate"])

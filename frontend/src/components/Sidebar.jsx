@@ -68,7 +68,7 @@ export default function Sidebar({ files, selected, status, indexing, onToggle, o
                   onChange={() => onToggle(file.name)}
                 />
                 <span>
-                  <strong>{file.name}</strong>
+                  <strong title={file.name}>{file.name}</strong>
                   <small>
                     {file.status || "ready"}
                     {file.pages ? ` · ${file.pages} page${file.pages === 1 ? "" : "s"}` : ""}

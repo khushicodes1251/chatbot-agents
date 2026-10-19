@@ -1,8 +1,7 @@
 """Index PDFs the user uploads and answer only from those files.
 
 Embeddings stay on the local Ollama model. Answers use the local vLLM server,
-with the local Ollama chat model as a fallback. The Harbor knowledge base is
-not queried here.
+with the local Ollama chat model as a fallback. No built-in document set is searched.
 """
 
 from __future__ import annotations
@@ -13,10 +12,7 @@ import re
 from pathlib import Path
 
 from rag_chatbot import config
-from rag_chatbot.documents import chunk_by_paragraphs
-from rag_chatbot.ollama_client import chat_stream, embed_text, require_models
-from rag_chatbot.support_behavior import truncate_hit_text
-from rag_chatbot.vllm_client import chat_stream_vllm
+from rag_chatbot.ollama_client import embed_text, require_models
 from rag_chatbot.vectorstore import get_client, retrieve
 
 ALLOWED_EXTENSIONS = {".pdf"}
@@ -55,10 +51,21 @@ def _save_manifest(rows: list[dict]) -> None:
     _manifest_path().write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
 
+def _paragraphs(text: str) -> list[str]:
+    return [part.strip() for part in text.split("\n\n") if part.strip()]
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3].rstrip() + "..."
+
+
 def chunk_document_text(text: str) -> list[str]:
     """Paragraph chunks, with a size split so one long block still retrieves well."""
     pieces: list[str] = []
-    for para in chunk_by_paragraphs(text):
+    for para in _paragraphs(text):
         if len(para) <= _CHUNK_CHARS:
             pieces.append(para)
             continue
@@ -254,7 +261,7 @@ def clear_uploads() -> None:
 
 
 def prepare_document_answer(question: str, selected: list[str] | None = None) -> dict:
-    """Retrieve only the PDFs the user selected. Does not search the Harbor knowledge base."""
+    """Retrieve only the PDFs the user selected."""
     purge_sample_note()
     question = (question or "").strip()
     if not question:
@@ -278,7 +285,7 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
     where = {"source": chosen[0]} if len(chosen) == 1 else {"source": {"$in": chosen}}
     hits = [
         hit
-        for hit in retrieve(question, collection=collection, diversify=False, where=where)
+        for hit in retrieve(question, collection=collection, where=where)
         if hit.get("source") in chosen
     ]
     if not hits:
@@ -290,8 +297,8 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
         }
 
     blocks = []
-    for i, hit in enumerate(hits[:3], start=1):
-        text = truncate_hit_text(hit["text"], _MAX_CHARS)
+    for i, hit in enumerate(hits[: config.TOP_K], start=1):
+        text = _truncate(hit["text"], _MAX_CHARS)
         page = hit.get("page")
         where = f"{hit['source']} p.{page}" if page else hit["source"]
         blocks.append(f"[{i}] ({where})\n{text}")
@@ -311,7 +318,7 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
             "content": f"CONTEXT:\n{context}\n\nQUESTION:\n{question}",
         },
     ]
-    return {"messages": messages, "answer": None, "hits": hits[:3], "gated": False}
+    return {"messages": messages, "answer": None, "hits": hits[: config.TOP_K], "gated": False}
 
 
 def source_list(hits: list[dict]) -> list[dict]:
@@ -325,14 +332,3 @@ def source_list(hits: list[dict]) -> list[dict]:
         sources.append({"name": hit.get("source"), "page": hit.get("page")})
     return sources
 
-
-def iter_document_tokens(question: str):
-    """Yield answer text for an uploaded-document question."""
-    prepared = prepare_document_answer(question)
-    if prepared["messages"] is None:
-        yield prepared["answer"] or ""
-        return
-    try:
-        yield from chat_stream_vllm(prepared["messages"])
-    except Exception:
-        yield from chat_stream(prepared["messages"])
