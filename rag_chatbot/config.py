@@ -10,10 +10,16 @@ ORDERS_PATH = PROJECT_ROOT / "support_agent" / "orders.json"
 EVAL_PATH = PROJECT_ROOT / "data" / "evaluation" / "eval_set.json"
 CHROMA_DIR = PROJECT_ROOT / ".chroma"
 COLLECTION_NAME = "harbor_knowledge"
+UPLOAD_DIR = PROJECT_ROOT / "data" / "uploads"
+UPLOAD_CHROMA_DIR = PROJECT_ROOT / ".chroma_uploads"
+UPLOAD_COLLECTION = "user_uploads"
 
 OLLAMA_URL = "http://127.0.0.1:11434"
 EMBED_MODEL = "nomic-embed-text"
 CHAT_MODEL = "llama3.2:3b"  # lighter option: "qwen2.5:0.5b" (faster, less reliable)
+# Already-running vLLM server. Used only for uploaded-document answers.
+VLLM_URL = "http://127.0.0.1:8000/v1"
+VLLM_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 # Generation / HTTP tuning (shorter caps cut total generation time on CPU)
 NUM_PREDICT = 120  # max new tokens; tighter than 180 to reduce wait without switching models

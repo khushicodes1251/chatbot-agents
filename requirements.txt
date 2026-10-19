@@ -9,3 +9,7 @@ requests>=2.31,<3
 
 # Stage 3 — local vector store
 chromadb>=0.5,<1
+
+# Web UI + local document upload (PDF text extraction)
+flask>=3.0,<4
+pypdf>=5.0,<6

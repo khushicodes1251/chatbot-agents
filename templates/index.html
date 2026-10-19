@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Document chat</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3" />
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <h1>Document chat</h1>
+        <p>Ask questions about PDFs you upload. Answers use only those files.</p>
+      </div>
+      <form id="upload-form">
+        <div id="dropzone" class="dropzone">
+          <p class="drop-title">Drop a PDF here</p>
+          <p class="muted">or choose a file with selectable text</p>
+          <button id="pick" type="button">Upload PDF</button>
+          <input id="file" type="file" accept="application/pdf,.pdf" hidden />
+        </div>
+      </form>
+      <p id="upload-status" class="status" role="status"></p>
+      <h2>Your documents</h2>
+      <ul id="file-list"></ul>
+    </aside>
+    <section class="chat">
+      <div id="welcome" class="welcome">
+        <h2>Chat with your own documents</h2>
+        <p>Upload a PDF, wait until it is ready, then ask a question. The answer is grounded in that file and names the source page. This chat does not use a built-in knowledge base.</p>
+        <ol>
+          <li>Upload one or more PDFs.</li>
+          <li>Wait for “Ready for questions”.</li>
+          <li>Ask about what is in those files.</li>
+        </ol>
+      </div>
+      <div id="log" class="log" aria-live="polite" hidden></div>
+      <form id="chat-form" class="composer">
+        <input id="question" type="text" placeholder="Ask about your PDFs…" autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+      <p class="footnote">Local model: {{ chat_model }}</p>
+    </section>
+  </div>
+  <script id="initial-files" type="application/json">{{ files | tojson }}</script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=3"></script>
+</body>
+</html>

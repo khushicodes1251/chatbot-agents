@@ -199,6 +199,7 @@ def retrieve(
     collection=None,
     *,
     diversify: bool = True,
+    where: dict | None = None,
 ) -> list[dict]:
     """
     Return top-k hits with text, metadata, distance, and approx similarity.
@@ -211,17 +212,26 @@ def retrieve(
     if collection is None:
         collection = get_collection()
 
-    # Wider pool for re-ranking; still return only top_k
-    n_candidates = max(top_k * 3, 8)
-    n_candidates = min(n_candidates, max(collection.count(), top_k))
+    # Wider pool for re-ranking; never ask for more rows than the index holds
+    if where is None:
+        count = collection.count()
+    else:
+        matched = collection.get(where=where)
+        count = len(matched.get("ids") or [])
+    if count <= 0:
+        return []
+    n_candidates = min(max(top_k * 3, 8), count)
 
     # Embed the raw question (same as historically). Do not add a Harbor document
     # prefix here — that shifted distances and weakened the unsupported gate.
-    result = collection.query(
-        query_embeddings=[embed_text(question)],
-        n_results=n_candidates,
-        include=["documents", "metadatas", "distances"],
-    )
+    query = {
+        "query_embeddings": [embed_text(question)],
+        "n_results": n_candidates,
+        "include": ["documents", "metadatas", "distances"],
+    }
+    if where is not None:
+        query["where"] = where
+    result = collection.query(**query)
 
     hits = []
     for doc, meta, dist in zip(
@@ -230,15 +240,16 @@ def retrieve(
         result["distances"][0],
     ):
         distance = float(dist)
-        hits.append(
-            {
-                "text": doc,
-                "source": meta["source"],
-                "chunk_id": meta["chunk_id"],
-                "distance": distance,
-                "similarity": 1.0 - distance,
-            }
-        )
+        hit = {
+            "text": doc,
+            "source": meta["source"],
+            "chunk_id": meta["chunk_id"],
+            "distance": distance,
+            "similarity": 1.0 - distance,
+        }
+        if meta.get("page") is not None:
+            hit["page"] = int(meta["page"])
+        hits.append(hit)
 
     if diversify and len(hits) > top_k:
         return rerank_hits(question, hits, top_k)

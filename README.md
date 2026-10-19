@@ -16,7 +16,7 @@ This repository teaches and implements a small **RAG** (Retrieval-Augmented Gene
 4. Retrieve the best chunks for a customer question  
 5. Generate an answer with a local chat model (Ollama), grounded in that context  
 
-You can learn the ideas in **Jupyter notebooks**, then run the same pipeline as a **terminal chatbot** (`chat_cli.py`).
+You can learn the ideas in **Jupyter notebooks**, then run the same Harbor pipeline as a **terminal chatbot** (`chat_cli.py`). A separate **PDF chat** in the browser (`web_app.py` + `frontend/`) answers only from PDFs you upload. It does not search the Harbor knowledge base.
 
 Harbor & Co. content is **fictional and educational**. See `data/knowledge_base/00_about_this_dataset.txt`.
 
@@ -51,6 +51,8 @@ Why it fits customer support:
 - Clarifying questions for ambiguous requests (no LLM wait)  
 - Privacy blocks for “all orders” / name-only lookups  
 - Evaluation set + validation scripts  
+- Browser **PDF chat**: upload text-based PDFs, choose which files to query, stream a grounded answer with filename and page  
+- Local vLLM for PDF answers, with the Ollama chat model as fallback  
 
 ### Limitations
 
@@ -58,6 +60,8 @@ Why it fits customer support:
 - Streaming improves **time-to-first-token visibility**, not always total generation time  
 - Sample store only: no real tickets, email, or phone channel  
 - Small models can still misread policy wording; always verify important answers with `--sources`  
+- PDF chat accepts text-based PDFs only (16 MB max). Scanned pages are rejected because OCR is not installed  
+- PDF answers are not gated by Harbor’s `MAX_DISTANCE` (that gate stays on the CLI). You must select at least one indexed PDF  
 - Not a production support platform (no auth, no multi-user sessions, no LangGraph/agents)  
 
 ---
@@ -72,8 +76,11 @@ Why it fits customer support:
 | Embedding model | `nomic-embed-text` | Small local embeddings for RAG |
 | Vector DB | Chroma (persistent) | Simple local store; no cloud |
 | HTTP | `requests` | Talk to Ollama’s HTTP API |
+| PDF answers | vLLM at `http://127.0.0.1:8000/v1` | OpenAI-compatible local server; Ollama chat is the fallback |
+| Web | Flask + React (Vite) | PDF upload and chat in the browser |
+| PDF text | `pypdf` | Extract a text layer and page numbers |
 | Learning | Jupyter notebooks | Experiment before packaging |
-| Orchestration | Plain Python (+ light helpers) | LangChain is **not** required for the CLI path |
+| Orchestration | Plain Python (+ light helpers) | LangChain is **not** required |
 
 ---
 
@@ -101,7 +108,25 @@ prompt (system + context + question) → Ollama chat (stream or blocking)
 answer printed in the terminal
 ```
 
-**Indexing is separate** (do this after changing documents):
+Uploaded-PDF chat is a second path. It does not call `pipeline.py` and does not read `.chroma/`:
+
+```
+Browser (http://127.0.0.1:5000)
+    │
+    ▼
+POST /api/upload  → extract PDF pages → chunk → embed (Ollama) → .chroma_uploads/
+    │
+    ▼
+POST /api/chat with the selected filenames only
+    │
+    ▼
+retrieve those PDFs → prompt (cite filename and page)
+    │
+    ▼
+stream tokens from vLLM, or from Ollama if vLLM is unreachable
+```
+
+**Harbor indexing is separate** (do this after changing Harbor documents):
 
 ```
 data/knowledge_base/**/*.txt → paragraph chunks → embeddings → .chroma/
@@ -120,24 +145,41 @@ chatbot-agents/
 ├── requirements.txt          # Python dependencies
 ├── build_index.py            # rebuild Chroma index from the knowledge base
 ├── chat_cli.py               # interactive / one-shot terminal chatbot
+├── web_app.py                # Flask: React page on :5000 plus /api routes
+├── frontend/                 # React UI (Vite) for PDF chat
+│   ├── src/App.jsx           # file list, selection, upload, chat
+│   ├── src/api.js            # calls /api on the Flask server
+│   ├── src/components/       # sidebar and chat pane
+│   └── dist/                 # production build served by Flask (gitignored)
 ├── rag_chatbot/              # application package
 │   ├── config.py             # paths, models, TOP_K, NUM_PREDICT, prompts
 │   ├── documents.py          # load .txt files (recursive) + paragraph chunking
 │   ├── ollama_client.py      # embed + chat/stream helpers
+│   ├── vllm_client.py        # stream answers from the local vLLM server
+│   ├── uploads.py            # PDF extract, chunk, embed, and selected-document retrieval
 │   ├── vectorstore.py        # Chroma build / open / retrieve
 │   ├── orders.py             # safe order-id lookup
 │   ├── support_behavior.py   # clarify, escalate, prompt framing
-│   └── pipeline.py           # end-to-end answer_question / stream
+│   └── pipeline.py           # Harbor CLI answer_question / stream
 ├── data/
 │   ├── knowledge_base/       # fictional Harbor & Co. documents (by topic)
-│   └── evaluation/           # eval_set.json + Phase 3 timing JSON
+│   ├── uploads/              # uploaded PDFs + manifest.json (gitignored)
+│   └── evaluation/           # eval set, latency, and model-comparison JSON
 ├── scripts/
 │   ├── validate_phase2.py    # KB load + retrieval relevance checks
-│   └── validate_phase4.py    # clarify / privacy / escalation behaviour
+│   ├── validate_phase4.py    # clarify / privacy / escalation behaviour
+│   ├── validate_regressions.py
+│   ├── validate_uploads.py   # PDF ingest, selection, and web route checks
+│   ├── compare_chat_models.py
+│   ├── latency_baseline.py
+│   └── run_phase6_tests.py
 ├── notebooks/                # Stage 1–4 learning notebooks
 ├── support_agent/            # original sample policies + orders.json
-└── .chroma/                  # local vector index (gitignored; created by build_index)
+├── .chroma/                  # Harbor vector index (gitignored; created by build_index)
+└── .chroma_uploads/          # uploaded-PDF vectors (gitignored)
 ```
+
+`templates/` and `static/` are leftovers from an earlier page. Flask does not serve them. Settings live in `rag_chatbot/config.py`. There is no `.env` file.
 
 ---
 
@@ -148,6 +190,8 @@ chatbot-agents/
 - **RAM:** 8 GB+ recommended if using `llama3.2:3b` on CPU; more is better  
 - **Disk:** room for Ollama models (`nomic-embed-text` ~0.3 GB, `llama3.2:3b` ~2 GB)  
 - **Ollama** installed and able to run `ollama serve`  
+- **Node.js** (for the React PDF chat build)  
+- Optional: a local vLLM server on port 8000 for PDF answers (`Qwen/Qwen2.5-7B-Instruct`)  
 - Optional: Jupyter for notebooks  
 
 ---
@@ -213,7 +257,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Main packages: `notebook`, `ipykernel`, `nbconvert`, `numpy`, `requests`, `chromadb`.
+Main packages: `notebook`, `ipykernel`, `nbconvert`, `numpy`, `requests`, `chromadb`, `flask`, `pypdf`.
+
+The PDF chat UI also needs Node packages in `frontend/`:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
 
 ---
 
@@ -317,7 +369,10 @@ Edit `rag_chatbot/config.py`:
 | `OLLAMA_KEEP_ALIVE` | Keep models loaded (default `"30m"`) |
 | `CHAT_TIMEOUT_S` / `EMBED_TIMEOUT_S` | HTTP timeouts |
 | `SYSTEM_PROMPT` / `NOT_ENOUGH_INFO` | Support wording |
-| `KB_DIR` / `ORDERS_PATH` / `CHROMA_DIR` | Paths |
+| `KB_DIR` / `ORDERS_PATH` / `CHROMA_DIR` | Harbor paths |
+| `UPLOAD_DIR` / `UPLOAD_CHROMA_DIR` | Uploaded PDFs and their vector store |
+| `UPLOAD_COLLECTION` | Chroma collection `user_uploads` |
+| `VLLM_URL` / `VLLM_MODEL` | Local vLLM endpoint used only for PDF answers |
 
 ---
 
@@ -355,13 +410,58 @@ Phase 3 timing comparisons (historical measurements on this machine):
 
 Manual chat checks: use the table in section 15 with `python chat_cli.py --sources`.
 
+```bash
+python scripts/validate_uploads.py
+```
+
 ---
 
-## 18. Performance troubleshooting and common errors
+## 18. PDF document chat (web UI)
+
+This path does **not** use the Harbor knowledge base, `pipeline.py`, or `harbor-note.txt`. Answers use only the PDFs you select.
+
+```bash
+source .venv/bin/activate
+ollama serve          # embeddings; also the chat fallback
+cd frontend && npm install && npm run build && cd ..
+python web_app.py
+```
+
+Open http://127.0.0.1:5000. Flask serves `frontend/dist` and the `/api` routes on that same port.
+
+For frontend development with live reload, leave Flask running and in another terminal run `npm run dev` inside `frontend/`. Open http://127.0.0.1:5173. That dev server proxies `/api` to Flask. After changing React code, run `npm run build` again so http://127.0.0.1:5000 stays current. `frontend/dist/` is gitignored.
+
+1. Upload one or more text-based PDFs (drag-and-drop or **Upload PDF**).
+2. Wait until the notice says the file is ready. A scanned PDF is rejected because OCR is not enabled. An encrypted PDF that cannot be decrypted is rejected. An empty or non-PDF file is rejected.
+3. The same file bytes are not indexed twice (SHA-256). Uploading a new file selects it; other files stay unselected until you check them.
+4. Ask a question. The answer is streamed and lists the source filename and page.
+5. **Remove** deletes that PDF and its vector chunks. No server restart is required.
+
+If no PDF is selected, the reply is: “Select at least one indexed PDF before asking a question.” If the selected pages do not contain the fact, the model says so. Embeddings use local Ollama (`nomic-embed-text`). Generation tries `VLLM_URL` / `VLLM_MODEL` in `rag_chatbot/config.py`, then falls back to `CHAT_MODEL`. Harbor’s `MAX_DISTANCE` gate is not applied to this collection.
+
+API:
+
+| Method | Path | Role |
+|--------|------|------|
+| `GET` | `/` | Built React page |
+| `GET` | `/api/files` | Indexed PDFs |
+| `POST` | `/api/upload` | Save, extract, embed one PDF |
+| `DELETE` | `/api/files/<name>` | Remove one PDF and its chunks |
+| `POST` | `/api/clear` | Remove every upload |
+| `POST` | `/api/chat` | Stream an answer for `{ "question", "documents" }` |
+
+The Harbor terminal bot is unchanged: `python chat_cli.py`.
+
+---
+
+## 19. Performance troubleshooting and common errors
 
 | Symptom | Likely cause | What to try |
 |---------|--------------|-------------|
 | Very slow answers (minutes) | CPU inference with `llama3.2:3b` | Expect slow totals; streaming shows tokens earlier; optional smaller `CHAT_MODEL` / lower `NUM_PREDICT` |
+| React page cannot reach the API | Flask is not running | Start `python web_app.py`. Use http://127.0.0.1:5000, or http://127.0.0.1:5173 only while `npm run dev` is running |
+| Blank page at port 5000 | React app was not built, or the browser cached an empty page | `cd frontend && npm run build`, restart `web_app.py`, then hard-refresh http://127.0.0.1:5000 |
+| Scanned PDF rejected | No text layer and OCR is not installed | Upload a PDF with selectable text |
 | “Cannot reach Ollama” | Server not running | `ollama serve`; check `OLLAMA_URL` |
 | Missing model errors | Model not pulled | `ollama pull nomic-embed-text` / `ollama pull llama3.2:3b` |
 | Collection not found / empty | Index never built | `python build_index.py` |
@@ -374,31 +474,37 @@ On one measured CPU run (same three in-KB questions, warmed models): average **t
 
 ---
 
-## 19. Privacy considerations and local-data handling
+## 20. Privacy considerations and local-data handling
 
 - All processing is intended to stay on your machine (Ollama + local Chroma).  
 - Sample orders are fictional; lookup requires an **exact order id**.  
 - The bot refuses bulk “list all orders” and name-only lookups.  
 - Do not put real customer PII into the knowledge base or `orders.json` for demos.  
-- `.chroma/` is local index data; it is gitignored.  
+- `.chroma/` and `.chroma_uploads/` are local index data; both are gitignored.  
+- Uploaded PDFs live in `data/uploads/` (gitignored), including `manifest.json` (filename, SHA-256, page count, chunk count). Do not put private documents you would not want on this machine into that folder.  
 
 ---
 
-## 20. Current limitations and sensible future improvements
+## 21. Current limitations and sensible future improvements
 
 **Current limitations**
 
-- CPU latency with 3B-class models  
-- No web UI, authentication, or real ticketing  
-- No automated LLM answer scoring (eval focuses on retrieval + behaviour gates)  
+- CPU latency with 3B-class models on the Harbor CLI  
+- PDF chat has no login, no OCR, and no Harbor-policy distance gate  
+- No real ticketing  
 - Learning notebooks still reflect earlier, smaller KB examples in places  
+
+**Already in the repo**
+
+- `llama3.2:3b` remains the Harbor CLI default. A recorded comparison with `qwen2.5:0.5b` is in `data/evaluation/model_comparison.json`.  
+- PDF chat is the React app served by `web_app.py` (not Gradio).  
+- Harbor retrieval keeps the best hit and also spreads chunks across topic folders for multi-policy questions.  
 
 **Sensible next steps**
 
-- Compare `qwen2.5:0.5b` vs `llama3.2:3b` for speed/quality (with fresh timings)  
-- Add a simple Gradio/Streamlit UI that reuses `pipeline.py`  
+- OCR for scanned PDFs, if you want image-only uploads  
+- GPU inference if a driver and GPU are available (this machine’s measured runs were CPU)  
 - Expand eval with automated answer-fact checks where practical  
-- Tune chunking for multi-doc questions (e.g. damaged item → return + refund)  
 
 ---
 
@@ -425,3 +531,4 @@ Use notebooks to learn; use `build_index.py` + `chat_cli.py` for the packaged ap
 5. `python build_index.py`  
 6. `python chat_cli.py`  
 7. `python scripts/validate_phase2.py && python scripts/validate_phase4.py`  
+8. PDF chat: `cd frontend && npm install && npm run build && cd .. && python web_app.py`, then open http://127.0.0.1:5000  
