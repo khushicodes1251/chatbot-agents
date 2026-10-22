@@ -18,6 +18,7 @@ from rag_chatbot.vectorstore import get_client, retrieve
 ALLOWED_EXTENSIONS = {".pdf"}
 _MAX_CHARS = 700
 _CHUNK_CHARS = 700
+_CHUNK_OVERLAP = 120
 _MANIFEST = "manifest.json"
 # Sample file previously indexed for demos. Never retrieve it.
 _SAMPLE_NAME = "harbor-note.txt"
@@ -62,8 +63,19 @@ def _truncate(text: str, max_chars: int) -> str:
     return text[: max_chars - 3].rstrip() + "..."
 
 
+def _window_end(para: str, start: int) -> int:
+    """End a window on a space when that does not make it much shorter."""
+    end = min(start + _CHUNK_CHARS, len(para))
+    if end >= len(para):
+        return end
+    space = para.rfind(" ", start + 1, end)
+    if space >= start + (_CHUNK_CHARS // 2):
+        return space
+    return end
+
+
 def chunk_document_text(text: str) -> list[str]:
-    """Paragraph chunks, with a size split so one long block still retrieves well."""
+    """Paragraph chunks. Long paragraphs overlap so a fact on the cut stays searchable."""
     pieces: list[str] = []
     for para in _paragraphs(text):
         if len(para) <= _CHUNK_CHARS:
@@ -71,8 +83,16 @@ def chunk_document_text(text: str) -> list[str]:
             continue
         start = 0
         while start < len(para):
-            pieces.append(para[start : start + _CHUNK_CHARS].strip())
-            start += _CHUNK_CHARS
+            end = _window_end(para, start)
+            piece = para[start:end].strip()
+            if piece:
+                pieces.append(piece)
+            if end >= len(para):
+                break
+            next_start = end - _CHUNK_OVERLAP
+            if next_start <= start:
+                next_start = end
+            start = next_start
     return [p for p in pieces if p]
 
 
@@ -260,7 +280,95 @@ def clear_uploads() -> None:
                 path.unlink()
 
 
-def prepare_document_answer(question: str, selected: list[str] | None = None) -> dict:
+def _hit_key(hit: dict) -> tuple:
+    return (hit.get("source"), hit.get("chunk_id"), hit.get("page"))
+
+
+def _retrieve_selected(question: str, collection, chosen: list[str]) -> list[dict]:
+    """Keep the best chunk from each selected PDF, then fill the rest by distance."""
+    vector = embed_text(question)
+
+    def hits_for(where: dict, top_k: int) -> list[dict]:
+        return [
+            hit
+            for hit in retrieve(
+                question,
+                collection=collection,
+                top_k=top_k,
+                where=where,
+                query_embedding=vector,
+            )
+            if hit.get("source") in chosen
+        ]
+
+    if len(chosen) == 1:
+        return hits_for({"source": chosen[0]}, config.TOP_K)
+
+    guaranteed = []
+    seen = set()
+    for name in chosen:
+        for hit in hits_for({"source": name}, 1):
+            key = _hit_key(hit)
+            if key in seen:
+                continue
+            seen.add(key)
+            guaranteed.append(hit)
+    guaranteed.sort(key=lambda hit: hit["distance"])
+    guaranteed = guaranteed[: config.TOP_K]
+    seen = {_hit_key(hit) for hit in guaranteed}
+
+    extras = []
+    if len(guaranteed) < config.TOP_K:
+        where = {"source": chosen[0]} if len(chosen) == 1 else {"source": {"$in": chosen}}
+        for hit in hits_for(where, config.TOP_K):
+            key = _hit_key(hit)
+            if key in seen:
+                continue
+            seen.add(key)
+            extras.append(hit)
+            if len(guaranteed) + len(extras) >= config.TOP_K:
+                break
+    return guaranteed + extras
+
+
+_FOLLOW_UP = re.compile(
+    r"\b(it|its|that|this|they|them|their|those|he|she|her|his)\b",
+    re.IGNORECASE,
+)
+_HISTORY_LIMIT = 4
+_HISTORY_CHARS = 500
+
+
+def normalize_history(history: list | None) -> list[dict]:
+    """Keep the latest user and assistant turns. Drop anything else."""
+    turns = []
+    for item in history or []:
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        text = str(item.get("text") or item.get("content") or "").strip()
+        if role not in ("user", "assistant") or not text:
+            continue
+        turns.append({"role": role, "content": text[:_HISTORY_CHARS]})
+    return turns[-_HISTORY_LIMIT:]
+
+
+def retrieval_question(question: str, history: list | None = None) -> str:
+    """Expand a short or pronoun follow-up with the previous user question."""
+    turns = normalize_history(history)
+    previous = next((turn["content"] for turn in reversed(turns) if turn["role"] == "user"), "")
+    if not previous:
+        return question
+    if len(question.split()) <= 12 or _FOLLOW_UP.search(question):
+        return f"{previous}\n{question}"
+    return question
+
+
+def prepare_document_answer(
+    question: str,
+    selected: list[str] | None = None,
+    history: list | None = None,
+) -> dict:
     """Retrieve only the PDFs the user selected."""
     purge_sample_note()
     question = (question or "").strip()
@@ -282,12 +390,8 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
         }
 
     collection = _upload_collection()
-    where = {"source": chosen[0]} if len(chosen) == 1 else {"source": {"$in": chosen}}
-    hits = [
-        hit
-        for hit in retrieve(question, collection=collection, where=where)
-        if hit.get("source") in chosen
-    ]
+    turns = normalize_history(history)
+    hits = _retrieve_selected(retrieval_question(question, turns), collection, chosen)
     if not hits:
         return {
             "messages": None,
@@ -309,10 +413,12 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
             "content": (
                 "You answer questions using only the selected PDF excerpts in CONTEXT. "
                 "Cite the source file name and page number. "
+                "Earlier messages only explain what a follow-up is asking. "
                 "If CONTEXT does not contain the answer, say it is not in the selected documents. "
                 "Do not use outside knowledge and do not invent facts."
             ),
         },
+        *turns,
         {
             "role": "user",
             "content": f"CONTEXT:\n{context}\n\nQUESTION:\n{question}",
@@ -322,13 +428,15 @@ def prepare_document_answer(question: str, selected: list[str] | None = None) ->
 
 
 def source_list(hits: list[dict]) -> list[dict]:
+    """Filename, page, and the excerpt that was retrieved for the answer."""
     sources = []
     seen = set()
     for hit in hits:
-        key = (hit.get("source"), hit.get("page"))
+        text = _truncate(hit.get("text") or "", _MAX_CHARS)
+        key = (hit.get("source"), hit.get("page"), text)
         if key in seen:
             continue
         seen.add(key)
-        sources.append({"name": hit.get("source"), "page": hit.get("page")})
+        sources.append({"name": hit.get("source"), "page": hit.get("page"), "text": text})
     return sources
 

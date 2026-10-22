@@ -21,11 +21,11 @@ export async function removePdf(name) {
   return data.files || [];
 }
 
-export async function streamAnswer(question, documents, onEvent) {
+export async function streamAnswer(question, documents, onEvent, history = []) {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, documents }),
+    body: JSON.stringify({ question, documents, history }),
   });
   if (!response.ok || !response.body) {
     throw new Error("The chat request failed.");

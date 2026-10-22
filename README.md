@@ -7,7 +7,7 @@ A local chatbot that answers from PDFs you upload. The browser UI is React. Flas
 ## What it does
 
 1. You upload one or more text-based PDFs.
-2. The app extracts the text layer, keeps the page number, and splits the text into chunks.
+2. The app extracts the text layer, keeps the page number, and splits the text into chunks. Long paragraphs overlap so a sentence in the middle of a page is not cut in half. When several PDFs are selected, retrieval keeps at least the closest chunk from each one.
 3. Chunks are embedded with Ollama (`nomic-embed-text`) and stored in a local Chroma collection.
 4. A question searches only the PDFs you have selected.
 5. The closest chunks are sent to a local vLLM server. If vLLM is down, the app falls back to the Ollama chat model.
@@ -90,7 +90,7 @@ For frontend work with live reload, leave Flask running and, in another terminal
 1. Drop a PDF on the sidebar, or click **Upload PDF**. The limit is 16 MB. Empty files, non-PDFs, encrypted PDFs that cannot be decrypted, and scanned PDFs are rejected.
 2. Wait until the notice says the file is ready. Uploading a file selects it. The same bytes are not indexed twice.
 3. Check only the documents you want to query. The question box stays disabled until at least one ready PDF is selected.
-4. Ask a question. Sources list the filename and page.
+4. Ask a question. Under the answer, each retrieved excerpt is shown with its filename and page. A short follow-up uses the previous question to find the right passage. Refreshing the page clears that conversation.
 5. **Remove** deletes that PDF and its chunks. No restart is required.
 
 ---
@@ -119,7 +119,7 @@ Edit `rag_chatbot/config.py`:
 | `EMBED_MODEL` | Ollama embedding model (`nomic-embed-text`) |
 | `CHAT_MODEL` | Ollama chat model used only if vLLM is unreachable |
 | `VLLM_URL` / `VLLM_MODEL` | Local vLLM endpoint for document answers |
-| `TOP_K` | How many chunks go into the prompt (default `4`) |
+| `TOP_K` | How many chunks go into the prompt (default `6`) |
 | `NUM_PREDICT` | Max new tokens (default `512`) |
 | `TEMPERATURE` | Sampling temperature (default `0.2`) |
 | `UPLOAD_DIR` | Folder for saved PDFs |

@@ -32,6 +32,7 @@ def retrieve(
     collection,
     top_k: int | None = None,
     where: dict | None = None,
+    query_embedding: list[float] | None = None,
 ) -> list[dict]:
     """Return the closest chunks from the given upload collection."""
     top_k = top_k or config.TOP_K
@@ -44,7 +45,7 @@ def retrieve(
         return []
 
     query = {
-        "query_embeddings": [embed_text(question)],
+        "query_embeddings": [query_embedding if query_embedding is not None else embed_text(question)],
         "n_results": min(top_k, count),
         "include": ["documents", "metadatas", "distances"],
     }

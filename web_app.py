@@ -91,7 +91,8 @@ def chat():
     if isinstance(selected, str):
         selected = [selected]
     try:
-        prepared = prepare_document_answer(question, selected)
+        history = payload.get("history") or []
+        prepared = prepare_document_answer(question, selected, history)
     except Exception as exc:
         message = str(exc)
         if "11434" in message or "Ollama" in message or "Connection" in message:

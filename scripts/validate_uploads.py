@@ -20,6 +20,8 @@ from rag_chatbot.uploads import (
     prepare_document_answer,
     purge_sample_note,
     remove_upload,
+    retrieval_question,
+    source_list,
 )
 from web_app import app
 
@@ -51,6 +53,18 @@ def text_pdf(text: str) -> bytes:
         f"trailer << /Size {len(objects)+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF".encode()
     )
     return bytes(out)
+
+
+def two_page_pdf(first: str, second: str) -> bytes:
+    from pypdf import PdfReader, PdfWriter
+
+    writer = PdfWriter()
+    for text in (first, second):
+        reader = PdfReader(io.BytesIO(text_pdf(text)))
+        writer.add_page(reader.pages[0])
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
 
 
 def main() -> int:
@@ -109,6 +123,15 @@ def main() -> int:
         "harbor-note" not in prompt.lower() and "quietbuds" not in prompt.lower(),
         prompt[:80],
     )
+    sources = source_list(grounded["hits"])
+    check(
+        "source_excerpt",
+        bool(sources)
+        and sources[0].get("name") == "experience.pdf"
+        and sources[0].get("page") == 1
+        and "Khushi" in (sources[0].get("text") or ""),
+        str(sources)[:180],
+    )
 
     web_source = (ROOT / "web_app.py").read_text(encoding="utf-8")
     upload_source = (ROOT / "rag_chatbot" / "uploads.py").read_text(encoding="utf-8")
@@ -130,11 +153,62 @@ def main() -> int:
     context_only = other_prompt.split("QUESTION:", 1)[0]
     check("selection_excludes_other_pdf", "Khushi" not in context_only and "18:00" in context_only, context_only[:120])
 
+    straddling = ("alpha " * 116) + "The vault code is 9137." + (" omega" * 40)
+    overlap_chunks = chunk_document_text(straddling)
+    check(
+        "overlap_keeps_code",
+        any("9137" in piece for piece in overlap_chunks) and len(overlap_chunks) >= 2,
+        f"n={len(overlap_chunks)}",
+    )
+    middle = index_upload(
+        "middle.pdf",
+        two_page_pdf("This cover sheet is only about printing supplies.", straddling),
+    )
+    check("middle_pdf_pages", middle["pages"] == 2 and middle["chunks"] >= 2, str(middle))
+    middle_answer = prepare_document_answer("What is the vault code?", ["middle.pdf"])
+    middle_prompt = middle_answer["messages"][1]["content"] if middle_answer["messages"] else ""
+    check("middle_page_retrieved", "9137" in middle_prompt and "p.2" in middle_prompt, middle_prompt[:220])
+
+    crowd = "\n\n".join(["The ticket office hours are posted on the board."] * 8)
+    index_upload("crowd.pdf", text_pdf(crowd))
+    index_upload("visitor.pdf", text_pdf("The visitor ticket code is 4400."))
+    mixed = prepare_document_answer("What is the visitor ticket code?", ["crowd.pdf", "visitor.pdf"])
+    mixed_prompt = mixed["messages"][1]["content"] if mixed["messages"] else ""
+    check(
+        "multi_pdf_keeps_each_file",
+        "4400" in mixed_prompt and "visitor.pdf" in mixed_prompt and "crowd.pdf" in mixed_prompt,
+        mixed_prompt[:240],
+    )
+
+    prior = [
+        {"role": "user", "text": "Who leads the north team?"},
+        {"role": "assistant", "text": "Amina Sharma leads the north team."},
+    ]
+    check(
+        "followup_query_uses_previous",
+        retrieval_question("What is their code?", prior).startswith("Who leads the north team?"),
+    )
+    long_question = "What time does the loading dock close on Friday evening according to the notice?"
+    check("long_question_stands_alone", retrieval_question(long_question, prior) == long_question, long_question)
+    index_upload(
+        "team.pdf",
+        two_page_pdf("Amina Sharma leads the north team.", "The north team budget code is 5521."),
+    )
+    follow = prepare_document_answer("What is their code?", ["team.pdf"], prior)
+    follow_text = "\n".join(message["content"] for message in (follow["messages"] or []))
+    check(
+        "followup_retrieves_code",
+        "5521" in follow_text and "Who leads the north team?" in follow_text and "p.2" in follow_text,
+        follow_text[:300],
+    )
+
     client = app.test_client()
     page = client.get("/")
     check("api_home", page.status_code == 200 and b"Document chat" in page.data and b"/assets/" in page.data)
     react_app = (ROOT / "frontend" / "src" / "components" / "Sidebar.jsx").read_text(encoding="utf-8")
     check("react_upload_ui", "Upload PDF" in react_app and "Harbor support" not in react_app)
+    chat_pane = (ROOT / "frontend" / "src" / "components" / "ChatPane.jsx").read_text(encoding="utf-8")
+    check("react_excerpt", "excerpt" in chat_pane and "Show more" in chat_pane)
 
     bad = client.post("/api/upload", data={"file": (io.BytesIO(b"hi"), "notes.docx")})
     check("flask_reject_docx", bad.status_code == 400 and "PDF" in bad.get_json().get("error", ""))

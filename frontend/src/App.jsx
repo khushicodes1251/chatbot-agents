@@ -70,6 +70,10 @@ export default function App() {
       setStatus({ text: "Select at least one indexed PDF before asking.", error: true });
       return;
     }
+    const history = messages
+      .slice(-4)
+      .map((message) => ({ role: message.role, text: (message.text || "").slice(0, 500) }))
+      .filter((message) => message.text);
     setBusy(true);
     setMessages((current) => [
       ...current,
@@ -87,7 +91,7 @@ export default function App() {
           next[next.length - 1] = last;
           return next;
         });
-      });
+      }, history);
     } catch (error) {
       setMessages((current) => {
         const next = current.slice();

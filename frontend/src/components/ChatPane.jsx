@@ -1,5 +1,28 @@
 import { useState } from "react";
 
+function Evidence({ source }) {
+  const [open, setOpen] = useState(false);
+  const text = source.text || "";
+  const long = text.length > 180;
+
+  return (
+    <li>
+      <p className="source-cite">
+        {source.name}
+        {source.page ? `, page ${source.page}` : ""}
+      </p>
+      {text ? (
+        <blockquote className={open || !long ? "excerpt open" : "excerpt"}>{text}</blockquote>
+      ) : null}
+      {long ? (
+        <button type="button" className="text-button" onClick={() => setOpen((value) => !value)}>
+          {open ? "Show less" : "Show more"}
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
 export default function ChatPane({ messages, busy, canAsk, selectedNames, onAsk }) {
   const [draft, setDraft] = useState("");
 
@@ -34,11 +57,8 @@ export default function ChatPane({ messages, busy, canAsk, selectedNames, onAsk 
               <p>{message.text || (busy && index === messages.length - 1 ? "Reading the selected pages…" : "")}</p>
               {message.sources?.length > 0 && (
                 <ul className="sources">
-                  {message.sources.map((source) => (
-                    <li key={`${source.name}-${source.page}`}>
-                      {source.name}
-                      {source.page ? `, page ${source.page}` : ""}
-                    </li>
+                  {message.sources.map((source, sourceIndex) => (
+                    <Evidence key={`${source.name}-${source.page}-${sourceIndex}`} source={source} />
                   ))}
                 </ul>
               )}
